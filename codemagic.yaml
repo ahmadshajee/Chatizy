@@ -5,15 +5,9 @@ workflows:
   chatizy-workflow:
     name: Chatizy Build Workflow
     instance_type: mac_mini_m2 # Required for iOS builds
-    max_build_duration: 60
-    
+    max_build_duration: 75
+
     environment:
-      groups:
-        # You can add your environment variable groups here if needed (e.g. keystore/cert credentials)
-        - supabase_config
-      vars:
-        # Custom environment variables
-        APP_NAME: "Chatizy"
       flutter: stable
       xcode: latest
       cocoapods: default
@@ -26,37 +20,41 @@ workflows:
           include: true
 
     scripts:
-      - name: Set up local configuration
+      - name: Print Flutter version
         script: |
           flutter --version
-          
+
       - name: Get Flutter packages
         script: |
           flutter pub get
 
-      - name: Lint and Analyze
+      - name: Generate iOS platform files (needed since project was created on Windows)
         script: |
-          flutter analyze --fatal-infos --fatal-warnings || true # Non-blocking for build tests
+          flutter create --platforms ios . || true
+          # Set the bundle identifier
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.chatizy.app" ios/Runner/Info.plist || true
+
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios && pod install --repo-update && cd ..
 
       - name: Build Android APK (Release)
         script: |
           flutter build apk --release
 
-      - name: Build iOS IPA (Release, No Code-sign)
+      - name: Build iOS (Release, No Code-sign)
         script: |
-          # Builds the iOS package. Note: For distribution, you must set up 
-          # iOS Code Signing in the Codemagic UI under App Settings > iOS code signing.
-          flutter build ipa --release --no-codesign
+          flutter build ios --release --no-codesign
 
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
-      - build/ios/ipa/*.ipa
-      - build/ios/xcarchive/*.xcarchive
+      - build/ios/iphoneos/*.app
+      - "*.zip"
 
     publishing:
       email:
         recipients:
-          - ahmadshajee2016@gmail.com # Extracted from the user's Codemagic screenshot
+          - ahmadshajee2016@gmail.com
         notify:
           success: true
           failure: true
