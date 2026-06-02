@@ -1,9 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/profile.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
+import '../widgets/glass_widgets.dart';
 
 import 'chats_list_screen.dart';
 import 'settings_screen.dart';
@@ -81,78 +83,61 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentIndex = 0;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appBarTitleColor = isDark ? Colors.white : const Color(0xFF1C1C1E);
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: ChatizyTheme.surface.withValues(alpha: 0.8),
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: ChatizyTheme.primary,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.chat_rounded,
-                  color: Colors.white, size: 18),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Chatizy',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: ChatizyTheme.primary,
-                  ),
-            ),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0.5),
-          child: Container(
-            height: 0.5,
-            color: ChatizyTheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-        ),
-      ),
+      backgroundColor: Colors.transparent,
+      appBar: null,
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: ChatizyTheme.outlineVariant.withValues(alpha: 0.5),
-              width: 0.5,
-            ),
-          ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (i) => setState(() => _currentIndex = i),
-          items: navItems
-              .map((item) => BottomNavigationBarItem(
-                    icon: Icon(item.icon),
-                    activeIcon: Icon(item.activeIcon),
-                    label: item.label,
-                  ))
-              .toList(),
-        ),
+      bottomNavigationBar: GlassBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: (i) => setState(() => _currentIndex = i),
+        items: navItems
+            .map((item) => BottomNavigationBarItem(
+                  icon: Icon(item.icon),
+                  activeIcon: Icon(item.activeIcon),
+                  label: item.label,
+                ))
+            .toList(),
       ),
       // FAB for new chat or add contact
       floatingActionButton:
           role != UserRole.superAdmin && (_currentIndex == 0 || _currentIndex == 1)
-              ? FloatingActionButton(
-                  backgroundColor: ChatizyTheme.primary,
-                  onPressed: () {
-                    if (_currentIndex == 0) {
-                      _showNewChatDialog(context);
-                    } else {
-                      _showAddContactByEmailDialog(context);
-                    }
-                  },
-                  child: Icon(
-                    _currentIndex == 0 ? Icons.edit : Icons.person_add,
-                    color: Colors.white,
+              ? Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF007AFF), Color(0xFFBF5AF2)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF007AFF).withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: RawMaterialButton(
+                    shape: const CircleBorder(),
+                    onPressed: () {
+                      if (_currentIndex == 0) {
+                        _showNewChatDialog(context);
+                      } else {
+                        _showAddContactByEmailDialog(context);
+                      }
+                    },
+                    child: Icon(
+                      _currentIndex == 0 ? Icons.edit : Icons.person_add,
+                      color: Colors.white,
+                    ),
                   ),
                 )
               : null,
@@ -164,115 +149,122 @@ class _HomeScreenState extends State<HomeScreen> {
     final chatProvider = context.read<ChatProvider>();
     List<Profile> results = [];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ChatizyTheme.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (ctx, scrollCtrl) => Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: ChatizyTheme.outlineVariant,
-                  borderRadius: ChatizyTheme.radiusFull,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('New Chat',
-                    style: Theme.of(ctx).textTheme.headlineSmall),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: searchCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'Search by name or email...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    filled: true,
-                    fillColor: ChatizyTheme.surfaceContainerHighest
-                        .withValues(alpha: 0.5),
-                    border: OutlineInputBorder(
-                      borderRadius: ChatizyTheme.radiusMd,
-                      borderSide: BorderSide.none,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.black.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.85),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            border: Border.all(
+              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+              width: 0.8,
+            ),
+          ),
+          child: StatefulBuilder(
+            builder: (ctx, setModalState) => DraggableScrollableSheet(
+              initialChildSize: 0.7,
+              minChildSize: 0.5,
+              maxChildSize: 0.9,
+              expand: false,
+              builder: (ctx, scrollCtrl) => Column(
+                children: [
+                  // Handle
+                  Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  onChanged: (q) async {
-                    if (q.length >= 2) {
-                      final r = await chatProvider.searchUsers(q);
-                      setModalState(() => results = r);
-                    } else {
-                      setModalState(() => results = []);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollCtrl,
-                  itemCount: results.length,
-                  itemBuilder: (ctx, i) {
-                    final user = results[i];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor:
-                            ChatizyTheme.surfaceContainerHighest,
-                        child: Text(
-                          user.fullName.substring(0, 1).toUpperCase(),
-                          style: const TextStyle(
-                              color: ChatizyTheme.onSurfaceVariant),
-                        ),
-                      ),
-                      title: Text(user.displayName),
-                      subtitle: Text(
-                        user.email ?? user.companyDomain ?? '',
-                        style: TextStyle(
-                          color: ChatizyTheme.outline,
-                          fontSize: 13,
-                        ),
-                      ),
-                      trailing: user.isOnline
-                          ? Container(
-                              width: 10,
-                              height: 10,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: ChatizyTheme.onlineGreen,
-                              ),
-                            )
-                          : null,
-                      onTap: () async {
-                        Navigator.pop(ctx);
-                        final room = await chatProvider.startDirectChat(
-                          user.id,
-                          companyDomain: user.companyDomain,
-                        );
-                        if (room != null && mounted) {
-                          await chatProvider.openConversation(room);
-                          if (mounted) {
-                            Navigator.of(context)
-                                .pushNamed('/conversation');
-                          }
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'New Chat',
+                      style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(
+                            color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: GlassTextField(
+                      controller: searchCtrl,
+                      hintText: 'Search by name or email...',
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      onChanged: (q) async {
+                        if (q.length >= 2) {
+                          final r = await chatProvider.searchUsers(q);
+                          setModalState(() => results = r);
+                        } else {
+                          setModalState(() => results = []);
                         }
                       },
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollCtrl,
+                      itemCount: results.length,
+                      itemBuilder: (ctx, i) {
+                        final user = results[i];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                            child: Text(
+                              user.fullName.substring(0, 1).toUpperCase(),
+                              style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1C1C1E)),
+                            ),
+                          ),
+                          title: Text(
+                            user.displayName,
+                            style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1C1C1E), fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                            user.email ?? user.companyDomain ?? '',
+                            style: TextStyle(
+                              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5),
+                              fontSize: 13,
+                            ),
+                          ),
+                          trailing: user.isOnline
+                              ? Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: ChatizyTheme.onlineGreen,
+                                  ),
+                                )
+                              : null,
+                          onTap: () async {
+                            final navigator = Navigator.of(context);
+                            Navigator.pop(ctx);
+                            final room = await chatProvider.startDirectChat(
+                              user.id,
+                              companyDomain: user.companyDomain,
+                            );
+                            if (room != null) {
+                              await chatProvider.openConversation(room);
+                              navigator.pushNamed('/conversation');
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -286,222 +278,264 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isSearching = false;
     String? errorMessage;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ChatizyTheme.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
           ),
           child: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Handle
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: ChatizyTheme.outlineVariant,
-                    borderRadius: ChatizyTheme.radiusFull,
-                  ),
-                ),
-                // Title with icon
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: ChatizyTheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.person_add_rounded,
-                        color: ChatizyTheme.primary,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Add Contact',
-                            style: Theme.of(ctx).textTheme.headlineSmall),
-                        Text('Find someone by their email address',
-                            style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                                  color: ChatizyTheme.outline,
-                                )),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // Email input
-                TextField(
-                  controller: emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    hintText: 'Enter email address',
-                    prefixIcon: const Icon(Icons.email_outlined, size: 20),
-                    filled: true,
-                    fillColor: ChatizyTheme.surfaceContainerHighest
-                        .withValues(alpha: 0.5),
-                    border: OutlineInputBorder(
-                      borderRadius: ChatizyTheme.radiusMd,
-                      borderSide: BorderSide.none,
-                    ),
-                    errorText: errorMessage,
-                  ),
-                  onChanged: (_) {
-                    if (errorMessage != null) {
-                      setModalState(() => errorMessage = null);
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Search button
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton.icon(
-                    onPressed: isSearching
-                        ? null
-                        : () async {
-                            final email = emailCtrl.text.trim();
-                            if (email.isEmpty || !email.contains('@')) {
-                              setModalState(() =>
-                                  errorMessage = 'Please enter a valid email address');
-                              return;
-                            }
-                            setModalState(() {
-                              isSearching = true;
-                              errorMessage = null;
-                              foundUser = null;
-                            });
-                            try {
-                              final result =
-                                  await chatProvider.searchByEmail(email);
-                              setModalState(() {
-                                isSearching = false;
-                                foundUser = result;
-                                if (result == null) {
-                                  errorMessage =
-                                      'No user found with this email address';
-                                }
-                              });
-                            } catch (e) {
-                              setModalState(() {
-                                isSearching = false;
-                                errorMessage = e.toString().replaceAll('Exception: ', '');
-                              });
-                            }
-                          },
-                    icon: isSearching
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.search),
-                    label: Text(isSearching ? 'Searching...' : 'Find Contact'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: ChatizyTheme.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: ChatizyTheme.radiusMd,
-                      ),
-                    ),
-                  ),
-                ),
-                // Found user card
-                if (foundUser != null) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: ChatizyTheme.surfaceContainerHighest
-                          .withValues(alpha: 0.3),
-                      borderRadius: ChatizyTheme.radiusMd,
-                      border: Border.all(
-                        color: ChatizyTheme.primary.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 4),
-                      leading: CircleAvatar(
-                        backgroundColor: ChatizyTheme.primaryContainer,
-                        radius: 24,
-                        child: Text(
-                          foundUser!.fullName
-                              .substring(0, 1)
-                              .toUpperCase(),
-                          style: const TextStyle(
-                            color: ChatizyTheme.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.85),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border.all(
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+                width: 0.8,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      title: Text(
-                        foundUser!.displayName,
-                        style: Theme.of(ctx).textTheme.titleMedium,
-                      ),
-                      subtitle: Text(
-                        foundUser!.email ?? '',
-                        style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                              color: ChatizyTheme.outline,
+                      Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF0A84FF), Color(0xFF5E5CE6)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0A84FF).withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
                             ),
+                            child: const Icon(
+                              Icons.person_add_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Add Contact',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                                  ),
+                                ),
+                                Text(
+                                  'Find someone by their email address',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      trailing: FilledButton(
-                        onPressed: () async {
-                          final navigator = Navigator.of(context);
-                          final scaffoldMessenger = ScaffoldMessenger.of(context);
-                          final userId = foundUser!.id;
-                          final domain = foundUser!.companyDomain;
-                          Navigator.pop(ctx);
-                          try {
-                            final room = await chatProvider.startDirectChat(
-                              userId,
-                              companyDomain: domain,
-                            );
-                            if (room != null) {
-                              await chatProvider.openConversation(room);
-                              navigator.pushNamed('/conversation');
-                            } else {
-                              scaffoldMessenger.showSnackBar(
-                                const SnackBar(content: Text('Failed to create chat. Please try again.')),
-                              );
-                            }
-                          } catch (e) {
-                            scaffoldMessenger.showSnackBar(
-                              SnackBar(content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}')),
-                            );
+                      const SizedBox(height: 24),
+                      GlassTextField(
+                        controller: emailCtrl,
+                        hintText: 'Enter email address',
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        keyboardType: TextInputType.emailAddress,
+                        errorText: errorMessage,
+                        onChanged: (_) {
+                          if (errorMessage != null) {
+                            setModalState(() => errorMessage = null);
                           }
                         },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: ChatizyTheme.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      ),
+                      const SizedBox(height: 20),
+                      GlassButton(
+                        isGlowing: true,
+                        onPressed: isSearching
+                            ? null
+                            : () async {
+                                final email = emailCtrl.text.trim();
+                                if (email.isEmpty || !email.contains('@')) {
+                                  setModalState(() =>
+                                      errorMessage = 'Please enter a valid email address');
+                                  return;
+                                }
+                                setModalState(() {
+                                  isSearching = true;
+                                  errorMessage = null;
+                                  foundUser = null;
+                                });
+                                try {
+                                  final result =
+                                      await chatProvider.searchByEmail(email);
+                                  setModalState(() {
+                                    isSearching = false;
+                                    foundUser = result;
+                                    if (result == null) {
+                                      errorMessage =
+                                          'No user found with this email address';
+                                    }
+                                  });
+                                } catch (e) {
+                                  setModalState(() {
+                                    isSearching = false;
+                                    errorMessage = e.toString().replaceAll('Exception: ', '');
+                                  });
+                                }
+                              },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (isSearching)
+                              const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            else
+                              const Icon(Icons.search, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Text(
+                              isSearching ? 'Searching...' : 'Find Contact',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (foundUser != null) ...[
+                        const SizedBox(height: 20),
+                        GlassCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: const Color(0xFF0A84FF).withValues(alpha: 0.2),
+                                radius: 24,
+                                child: Text(
+                                  foundUser!.fullName
+                                      .substring(0, 1)
+                                      .toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Color(0xFF0A84FF),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      foundUser!.displayName,
+                                      style: TextStyle(
+                                        color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      foundUser!.email ?? '',
+                                      style: TextStyle(
+                                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GlassButton(
+                                width: 80,
+                                height: 38,
+                                isGlowing: true,
+                                borderRadius: BorderRadius.circular(12),
+                                onPressed: () async {
+                                  final navigator = Navigator.of(context);
+                                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+                                  final userId = foundUser!.id;
+                                  final domain = foundUser!.companyDomain;
+                                  Navigator.pop(ctx);
+                                  try {
+                                    final room = await chatProvider.startDirectChat(
+                                      userId,
+                                      companyDomain: domain,
+                                    );
+                                    if (room != null) {
+                                      await chatProvider.openConversation(room);
+                                      navigator.pushNamed('/conversation');
+                                    } else {
+                                      scaffoldMessenger.showSnackBar(
+                                        const SnackBar(content: Text('Failed to create chat. Please try again.')),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    scaffoldMessenger.showSnackBar(
+                                      SnackBar(content: Text('Error: ${e.toString().replaceAll("Exception: ", "")}')),
+                                    );
+                                  }
+                                },
+                                child: const Text(
+                                  'Chat',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: const Text('Chat'),
-                      ),
-                    ),
+                      ],
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                ],
-                const SizedBox(height: 8),
-              ],
+                ),
+              ),
             ),
           ),
         ),
@@ -566,165 +600,186 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
 
   void _showContactActions(BuildContext context, Profile contact) {
     final chatProvider = context.read<ChatProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: ChatizyTheme.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: ChatizyTheme.outlineVariant,
-                  borderRadius: ChatizyTheme.radiusFull,
-                ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (ctx) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.85),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border.all(
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+                width: 0.8,
               ),
-              // Contact header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Row(
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircleAvatar(
-                      backgroundColor: ChatizyTheme.primaryContainer,
-                      radius: 24,
-                      child: Text(
-                        contact.fullName.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
+                    // Handle bar
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // Contact header
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
                         children: [
-                          Text(contact.displayName,
-                              style: Theme.of(ctx).textTheme.titleLarge),
-                          if (contact.email != null)
-                            Text(contact.email!,
-                                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                                      color: ChatizyTheme.outline,
-                                    )),
+                          CircleAvatar(
+                            backgroundColor: const Color(0xFF0A84FF).withValues(alpha: 0.2),
+                            radius: 24,
+                            child: Text(
+                              contact.fullName.substring(0, 1).toUpperCase(),
+                              style: const TextStyle(
+                                color: Color(0xFF0A84FF),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  contact.displayName,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                                  ),
+                                ),
+                                if (contact.email != null)
+                                  Text(
+                                    contact.email!,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (contact.isOnline)
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: ChatizyTheme.onlineGreen,
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                    if (contact.isOnline)
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: ChatizyTheme.onlineGreen,
+                    Divider(height: 16, color: isDark ? Colors.white10 : Colors.black12),
+
+                    // 1. Chat
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0A84FF).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        child: const Icon(Icons.chat_bubble_outline,
+                            color: Color(0xFF0A84FF), size: 20),
                       ),
+                      title: Text('Chat', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1C1C1E), fontWeight: FontWeight.w600)),
+                      subtitle: Text('Start a conversation',
+                          style: TextStyle(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5), fontSize: 12)),
+                      onTap: () async {
+                        final navigator = Navigator.of(context);
+                        Navigator.pop(ctx);
+                        final room = await chatProvider.startDirectChat(
+                          contact.id,
+                          companyDomain: contact.companyDomain,
+                        );
+                        if (room != null) {
+                          await chatProvider.openConversation(room);
+                          navigator.pushNamed('/conversation');
+                        }
+                      },
+                    ),
+
+                    // 2. Add Nickname
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD60A).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.edit_outlined,
+                            color: Color(0xFFFFD60A), size: 20),
+                      ),
+                      title: Text('Add Nickname', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1C1C1E), fontWeight: FontWeight.w600)),
+                      subtitle: Text('Set a custom name for this contact',
+                          style: TextStyle(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5), fontSize: 12)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showAddNicknameDialog(context, contact);
+                      },
+                    ),
+
+                    // 3. Remove Contact
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF453A).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.person_remove_outlined,
+                            color: Color(0xFFFF453A), size: 20),
+                      ),
+                      title: const Text('Remove Contact',
+                          style: TextStyle(color: Color(0xFFFF453A), fontWeight: FontWeight.w600)),
+                      subtitle: Text('Delete this contact and chat history',
+                          style: TextStyle(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5), fontSize: 12)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showRemoveContactConfirmation1(context, contact);
+                      },
+                    ),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
-              const Divider(height: 16),
-
-              // 1. Chat
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: ChatizyTheme.primary.withValues(alpha: 0.1),
-                    borderRadius: ChatizyTheme.radiusMd,
-                  ),
-                  child: const Icon(Icons.chat_bubble_outline,
-                      color: ChatizyTheme.primary, size: 20),
-                ),
-                title: const Text('Chat'),
-                subtitle: Text('Start a conversation',
-                    style: TextStyle(color: ChatizyTheme.outline, fontSize: 13)),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  final room = await chatProvider.startDirectChat(
-                    contact.id,
-                    companyDomain: contact.companyDomain,
-                  );
-                  if (room != null && context.mounted) {
-                    await chatProvider.openConversation(room);
-                    if (context.mounted) {
-                      Navigator.of(context).pushNamed('/conversation');
-                    }
-                  }
-                },
-              ),
-
-              // 2. Add Nickname
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: ChatizyTheme.starYellow.withValues(alpha: 0.15),
-                    borderRadius: ChatizyTheme.radiusMd,
-                  ),
-                  child: const Icon(Icons.edit_outlined,
-                      color: ChatizyTheme.starYellow, size: 20),
-                ),
-                title: const Text('Add Nickname'),
-                subtitle: Text('Set a custom name for this contact',
-                    style: TextStyle(color: ChatizyTheme.outline, fontSize: 13)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showAddNicknameDialog(context, contact);
-                },
-              ),
-
-              // 3. Remove Contact
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: ChatizyTheme.error.withValues(alpha: 0.1),
-                    borderRadius: ChatizyTheme.radiusMd,
-                  ),
-                  child: const Icon(Icons.person_remove_outlined,
-                      color: ChatizyTheme.error, size: 20),
-                ),
-                title: Text('Remove Contact',
-                    style: TextStyle(color: ChatizyTheme.error)),
-                subtitle: Text('Delete this contact and chat history',
-                    style: TextStyle(color: ChatizyTheme.outline, fontSize: 13)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showRemoveContactConfirmation1(context, contact);
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // â”€â”€â”€ Add Nickname Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
   void _showAddNicknameDialog(BuildContext context, Profile contact) {
     final controller = TextEditingController(text: contact.nickname ?? '');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ChatizyTheme.surfaceContainerLowest,
-        shape: RoundedRectangleBorder(borderRadius: ChatizyTheme.radiusXl),
+      builder: (ctx) => GlassAlertDialog(
         title: const Text('Add Nickname'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -732,33 +787,29 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
           children: [
             Text(
               'Set a nickname for ${contact.fullName}',
-              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: ChatizyTheme.outline,
-                  ),
+              style: TextStyle(
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 16),
-            TextField(
+            GlassTextField(
               controller: controller,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: 'Enter nickname',
-                filled: true,
-                fillColor: ChatizyTheme.surfaceContainerHighest
-                    .withValues(alpha: 0.5),
-                border: OutlineInputBorder(
-                  borderRadius: ChatizyTheme.radiusMd,
-                  borderSide: BorderSide.none,
-                ),
-              ),
+              hintText: 'Enter nickname',
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF8E8E93))),
           ),
-          FilledButton(
+          const SizedBox(width: 8),
+          GlassButton(
+            width: 100,
+            height: 38,
+            isGlowing: true,
+            borderRadius: BorderRadius.circular(12),
             onPressed: () {
               Navigator.pop(ctx);
               final nickname = controller.text.trim();
@@ -771,32 +822,28 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
                 );
               }
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: ChatizyTheme.primary,
-            ),
-            child: const Text('Save'),
+            child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  // â”€â”€â”€ Remove Contact: Double Confirmation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Remove Contact: Double Confirmation ────────────────────────────
 
   void _showRemoveContactConfirmation1(BuildContext context, Profile contact) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ChatizyTheme.surfaceContainerLowest,
-        shape: RoundedRectangleBorder(borderRadius: ChatizyTheme.radiusXl),
+      builder: (ctx) => GlassAlertDialog(
         icon: Container(
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: ChatizyTheme.error.withValues(alpha: 0.1),
+            color: const Color(0xFFFF453A).withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.person_remove, color: ChatizyTheme.error, size: 28),
+          child: const Icon(Icons.person_remove, color: Color(0xFFFF453A), size: 28),
         ),
         title: const Text('Remove Contact?'),
         content: Text(
@@ -807,17 +854,18 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF8E8E93))),
           ),
-          FilledButton(
+          const SizedBox(width: 8),
+          GlassButton(
+            width: 110,
+            height: 38,
+            borderRadius: BorderRadius.circular(12),
             onPressed: () {
               Navigator.pop(ctx);
               _showRemoveContactConfirmation2(context, contact);
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: ChatizyTheme.error,
-            ),
-            child: const Text('Remove'),
+            child: const Text('Remove', style: TextStyle(color: Color(0xFFFF453A), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -825,39 +873,36 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
   }
 
   void _showRemoveContactConfirmation2(BuildContext context, Profile contact) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ChatizyTheme.surfaceContainerLowest,
-        shape: RoundedRectangleBorder(borderRadius: ChatizyTheme.radiusXl),
+      builder: (ctx) => GlassAlertDialog(
         icon: Container(
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: ChatizyTheme.error.withValues(alpha: 0.15),
+            color: const Color(0xFFFF453A).withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.warning_amber_rounded,
-              color: ChatizyTheme.error, size: 32),
+              color: Color(0xFFFF453A), size: 32),
         ),
         title: const Text('This cannot be undone!'),
         content: Text(
           'You are about to permanently remove ${contact.displayName} and ALL chat messages with them.\n\nAre you absolutely sure?',
           textAlign: TextAlign.center,
-          style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                color: ChatizyTheme.onSurfaceVariant,
-              ),
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
-          OutlinedButton(
+          TextButton(
             onPressed: () => Navigator.pop(ctx),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: ChatizyTheme.outlineVariant),
-            ),
-            child: const Text('No, keep contact'),
+            child: Text('No, keep', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF8E8E93))),
           ),
-          FilledButton(
+          const SizedBox(width: 8),
+          GlassButton(
+            width: 190,
+            height: 38,
+            borderRadius: BorderRadius.circular(12),
             onPressed: () async {
               Navigator.pop(ctx);
               final chatProvider = context.read<ChatProvider>();
@@ -872,10 +917,7 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
                 );
               }
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: ChatizyTheme.error,
-            ),
-            child: const Text('Yes, remove permanently'),
+            child: const Text('Yes, remove permanently', style: TextStyle(color: Color(0xFFFF453A), fontWeight: FontWeight.bold, fontSize: 13)),
           ),
         ],
       ),
@@ -887,150 +929,169 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
   void _showMultiSelectActions(BuildContext context) {
     final selected = _getSelectedProfiles();
     if (selected.isEmpty) return;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: ChatizyTheme.surfaceContainerLowest,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: ChatizyTheme.outlineVariant,
-                  borderRadius: ChatizyTheme.radiusFull,
-                ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (ctx) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.85),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              border: Border.all(
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+                width: 0.8,
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Text(
-                  '${selected.length} contact${selected.length > 1 ? 's' : ''} selected',
-                  style: Theme.of(ctx).textTheme.headlineSmall,
-                ),
-              ),
-              const Divider(height: 8),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        '${selected.length} contact${selected.length > 1 ? 's' : ''} selected',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF1C1C1E),
+                        ),
+                      ),
+                    ),
+                    Divider(height: 8, color: isDark ? Colors.white10 : Colors.black12),
 
-              // Delete selected contacts
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: ChatizyTheme.error.withValues(alpha: 0.1),
-                    borderRadius: ChatizyTheme.radiusMd,
-                  ),
-                  child: const Icon(Icons.delete_outline,
-                      color: ChatizyTheme.error, size: 22),
-                ),
-                title: Text('Delete ${selected.length} Contact${selected.length > 1 ? 's' : ''}',
-                    style: TextStyle(color: ChatizyTheme.error)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _confirmBulkDelete(context, selected);
-                },
-              ),
+                    // Delete selected contacts
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF453A).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.delete_outline,
+                            color: Color(0xFFFF453A), size: 22),
+                      ),
+                      title: Text('Delete ${selected.length} Contact${selected.length > 1 ? 's' : ''}',
+                          style: const TextStyle(color: Color(0xFFFF453A), fontWeight: FontWeight.w600)),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _confirmBulkDelete(context, selected);
+                      },
+                    ),
 
-              // Make a group
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: ChatizyTheme.tertiary.withValues(alpha: 0.1),
-                    borderRadius: ChatizyTheme.radiusMd,
-                  ),
-                  child: const Icon(Icons.group_add,
-                      color: ChatizyTheme.tertiary, size: 22),
-                ),
-                title: const Text('Make a Group'),
-                subtitle: Text(
-                  'Create a group chat with selected contacts',
-                  style: TextStyle(color: ChatizyTheme.outline, fontSize: 13),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showCreateGroupDialog(context, selected);
-                },
-              ),
+                    // Make a group
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFBF5AF2).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.group_add,
+                            color: Color(0xFFBF5AF2), size: 22),
+                      ),
+                      title: Text('Make a Group', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1C1C1E), fontWeight: FontWeight.w600)),
+                      subtitle: Text(
+                        'Create a group chat with selected contacts',
+                        style: TextStyle(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5), fontSize: 12),
+                      ),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showCreateGroupDialog(context, selected);
+                      },
+                    ),
 
-              // Broadcast message
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: ChatizyTheme.primary.withValues(alpha: 0.1),
-                    borderRadius: ChatizyTheme.radiusMd,
-                  ),
-                  child: const Icon(Icons.campaign_outlined,
-                      color: ChatizyTheme.primary, size: 22),
-                ),
-                title: const Text('Broadcast Message'),
-                subtitle: Text(
-                  'Send the same message to all selected',
-                  style: TextStyle(color: ChatizyTheme.outline, fontSize: 13),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showBroadcastDialog(context, selected, isScheduled: false);
-                },
-              ),
+                    // Broadcast message
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0A84FF).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.campaign_outlined,
+                            color: Color(0xFF0A84FF), size: 22),
+                      ),
+                      title: Text('Broadcast Message', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1C1C1E), fontWeight: FontWeight.w600)),
+                      subtitle: Text(
+                        'Send the same message to all selected',
+                        style: TextStyle(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5), fontSize: 12),
+                      ),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showBroadcastDialog(context, selected, isScheduled: false);
+                      },
+                    ),
 
-              // Scheduled broadcast
-              ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: ChatizyTheme.onlineGreen.withValues(alpha: 0.1),
-                    borderRadius: ChatizyTheme.radiusMd,
-                  ),
-                  child: const Icon(Icons.schedule_send,
-                      color: ChatizyTheme.onlineGreen, size: 22),
+                    // Scheduled broadcast
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF30D158).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.schedule_send,
+                            color: Color(0xFF30D158), size: 22),
+                      ),
+                      title: Text('Scheduled Broadcast', style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1C1C1E), fontWeight: FontWeight.w600)),
+                      subtitle: Text(
+                        'Send a message at a later time',
+                        style: TextStyle(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5), fontSize: 12),
+                      ),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showBroadcastDialog(context, selected, isScheduled: true);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                 ),
-                title: const Text('Scheduled Broadcast'),
-                subtitle: Text(
-                  'Send a message at a later time',
-                  style: TextStyle(color: ChatizyTheme.outline, fontSize: 13),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showBroadcastDialog(context, selected, isScheduled: true);
-                },
               ),
-              const SizedBox(height: 8),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // â”€â”€â”€ Bulk Delete Confirmation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Bulk Delete Confirmation ───────────────────────────────────────
 
   void _confirmBulkDelete(BuildContext context, List<Profile> contacts) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ChatizyTheme.surfaceContainerLowest,
-        shape: RoundedRectangleBorder(borderRadius: ChatizyTheme.radiusXl),
+      builder: (ctx) => GlassAlertDialog(
         icon: Container(
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: ChatizyTheme.error.withValues(alpha: 0.1),
+            color: const Color(0xFFFF453A).withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.delete_forever,
-              color: ChatizyTheme.error, size: 28),
+              color: Color(0xFFFF453A), size: 28),
         ),
         title: Text('Delete ${contacts.length} Contact${contacts.length > 1 ? 's' : ''}?'),
         content: Column(
@@ -1039,9 +1100,10 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
             Text(
               'This will permanently remove these contacts and all chat history:',
               textAlign: TextAlign.center,
-              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: ChatizyTheme.outline,
-                  ),
+              style: TextStyle(
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 12),
             ...contacts.take(5).map((c) => Padding(
@@ -1049,27 +1111,32 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.person, size: 16, color: ChatizyTheme.outline),
+                      Icon(Icons.person, size: 16, color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5)),
                       const SizedBox(width: 6),
                       Text(c.displayName,
-                          style: Theme.of(ctx).textTheme.bodyMedium),
+                          style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1C1C1E), fontSize: 14)),
                     ],
                   ),
                 )),
             if (contacts.length > 5)
               Text('... and ${contacts.length - 5} more',
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                        color: ChatizyTheme.outline,
-                      )),
+                  style: TextStyle(
+                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5),
+                    fontSize: 12,
+                  )),
           ],
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF8E8E93))),
           ),
-          FilledButton(
+          const SizedBox(width: 8),
+          GlassButton(
+            width: 120,
+            height: 38,
+            borderRadius: BorderRadius.circular(12),
             onPressed: () async {
               Navigator.pop(ctx);
               final chatProvider = context.read<ChatProvider>();
@@ -1078,91 +1145,82 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('${contacts.length} contact${contacts.length > 1 ? 's' : ''} removed'),
+                    content: Text('${contacts.length} contacts removed'),
                     backgroundColor: ChatizyTheme.error,
                   ),
                 );
               }
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: ChatizyTheme.error,
-            ),
-            child: const Text('Delete All'),
+            child: const Text('Delete All', style: TextStyle(color: Color(0xFFFF453A), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  // â”€â”€â”€ Create Group Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
   void _showCreateGroupDialog(BuildContext context, List<Profile> members) {
     final nameCtrl = TextEditingController();
     final auth = context.read<AuthProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: ChatizyTheme.surfaceContainerLowest,
-        shape: RoundedRectangleBorder(borderRadius: ChatizyTheme.radiusXl),
+      builder: (ctx) => GlassAlertDialog(
         title: const Text('Create Group'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
+            GlassTextField(
               controller: nameCtrl,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: 'Group name',
-                prefixIcon: const Icon(Icons.group, size: 20),
-                filled: true,
-                fillColor:
-                    ChatizyTheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                border: OutlineInputBorder(
-                  borderRadius: ChatizyTheme.radiusMd,
-                  borderSide: BorderSide.none,
-                ),
-              ),
+              hintText: 'Group name',
+              prefixIcon: const Icon(Icons.group, size: 20),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: ChatizyTheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: ChatizyTheme.radiusMd,
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.12),
+                  width: 0.8,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '${members.length} member${members.length > 1 ? 's' : ''}',
-                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                          color: ChatizyTheme.outline,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: TextStyle(
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.6),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
                     children: members
-                        .map((m) => Chip(
-                              label: Text(m.displayName,
-                                  style: const TextStyle(fontSize: 12)),
-                              avatar: CircleAvatar(
-                                backgroundColor: ChatizyTheme.primaryContainer,
-                                radius: 12,
-                                child: Text(
-                                  m.fullName.substring(0, 1).toUpperCase(),
-                                  style: const TextStyle(
-                                      fontSize: 10, color: Colors.white),
-                                ),
+                      .map((m) => Chip(
+                            backgroundColor: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                            side: BorderSide(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1)),
+                            label: Text(m.displayName,
+                                style: TextStyle(fontSize: 12, color: isDark ? Colors.white : const Color(0xFF1C1C1E))),
+                            avatar: CircleAvatar(
+                              backgroundColor: const Color(0xFF0A84FF).withValues(alpha: 0.2),
+                              radius: 12,
+                              child: Text(
+                                m.fullName.substring(0, 1).toUpperCase(),
+                                style: const TextStyle(
+                                    fontSize: 10, color: Color(0xFF0A84FF), fontWeight: FontWeight.bold),
                               ),
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                            ))
-                        .toList(),
+                            ),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                          ))
+                      .toList(),
                   ),
                 ],
               ),
@@ -1172,9 +1230,14 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF8E8E93))),
           ),
-          FilledButton(
+          const SizedBox(width: 8),
+          GlassButton(
+            width: 100,
+            height: 38,
+            isGlowing: true,
+            borderRadius: BorderRadius.circular(12),
             onPressed: () async {
               final name = nameCtrl.text.trim();
               if (name.isEmpty) return;
@@ -1193,42 +1256,41 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
                 }
               }
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: ChatizyTheme.primary,
-            ),
-            child: const Text('Create'),
+            child: const Text('Create', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  // â”€â”€â”€ Broadcast / Scheduled Broadcast Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Broadcast / Scheduled Broadcast Dialog ──────────────────────────
 
   void _showBroadcastDialog(BuildContext context, List<Profile> recipients,
       {required bool isScheduled}) {
     final msgCtrl = TextEditingController();
     final auth = context.read<AuthProvider>();
     DateTime? scheduledTime;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: ChatizyTheme.surfaceContainerLowest,
-          shape: RoundedRectangleBorder(borderRadius: ChatizyTheme.radiusXl),
+        builder: (ctx, setDialogState) => GlassAlertDialog(
           title: Row(
             children: [
               Icon(
                 isScheduled ? Icons.schedule_send : Icons.campaign,
                 color: isScheduled
-                    ? ChatizyTheme.onlineGreen
-                    : ChatizyTheme.primary,
+                    ? const Color(0xFF30D158)
+                    : const Color(0xFF0A84FF),
                 size: 24,
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(isScheduled ? 'Scheduled Broadcast' : 'Broadcast Message'),
+                child: Text(
+                  isScheduled ? 'Scheduled Broadcast' : 'Broadcast Message',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -1238,22 +1300,26 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
               children: [
                 // Recipients preview
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: ChatizyTheme.surfaceContainerHighest
-                        .withValues(alpha: 0.3),
-                    borderRadius: ChatizyTheme.radiusMd,
+                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                      width: 0.8,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.people, size: 18, color: ChatizyTheme.outline),
+                      Icon(Icons.people, size: 18, color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'To: ${recipients.map((r) => r.displayName).join(", ")}',
-                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                                color: ChatizyTheme.outline,
-                              ),
+                          style: TextStyle(
+                            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.7),
+                            fontSize: 12,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1264,18 +1330,31 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
                 const SizedBox(height: 14),
 
                 // Message input
-                TextField(
-                  controller: msgCtrl,
-                  maxLines: 4,
-                  minLines: 2,
-                  decoration: InputDecoration(
-                    hintText: 'Type your broadcast message...',
-                    filled: true,
-                    fillColor: ChatizyTheme.surfaceContainerHighest
-                        .withValues(alpha: 0.5),
-                    border: OutlineInputBorder(
-                      borderRadius: ChatizyTheme.radiusMd,
-                      borderSide: BorderSide.none,
+                Container(
+                  decoration: BoxDecoration(
+                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.12),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: msgCtrl,
+                    maxLines: 4,
+                    minLines: 2,
+                    style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1C1C1E), fontSize: 15),
+                    decoration: InputDecoration(
+                      hintText: 'Type your broadcast message...',
+                      hintStyle: TextStyle(
+                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.4),
+                        fontSize: 15,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ),
@@ -1309,24 +1388,26 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: ChatizyTheme.onlineGreen.withValues(alpha: 0.08),
-                        borderRadius: ChatizyTheme.radiusMd,
+                        color: const Color(0xFF30D158).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: ChatizyTheme.onlineGreen.withValues(alpha: 0.3),
+                          color: const Color(0xFF30D158).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
                         children: [
                           const Icon(Icons.event,
-                              color: ChatizyTheme.onlineGreen, size: 20),
+                              color: Color(0xFF30D158), size: 20),
                           const SizedBox(width: 10),
                           Text(
                             scheduledTime != null
                                 ? '${scheduledTime!.day}/${scheduledTime!.month}/${scheduledTime!.year} at ${scheduledTime!.hour}:${scheduledTime!.minute.toString().padLeft(2, '0')}'
                                 : 'Pick date & time',
-                            style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
-                                  color: ChatizyTheme.onlineGreen,
-                                ),
+                            style: const TextStyle(
+                              color: Color(0xFF30D158),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
@@ -1339,9 +1420,14 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text('Cancel', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF8E8E93))),
             ),
-            FilledButton.icon(
+            const SizedBox(width: 8),
+            GlassButton(
+              width: 130,
+              height: 38,
+              isGlowing: true,
+              borderRadius: BorderRadius.circular(12),
               onPressed: () async {
                 final msg = msgCtrl.text.trim();
                 if (msg.isEmpty) return;
@@ -1386,12 +1472,16 @@ class _ContactsPlaceholderState extends State<_ContactsPlaceholder> {
                   }
                 }
               },
-              icon: Icon(isScheduled ? Icons.schedule_send : Icons.send),
-              label: Text(isScheduled ? 'Schedule' : 'Send Now'),
-              style: FilledButton.styleFrom(
-                backgroundColor: isScheduled
-                    ? ChatizyTheme.onlineGreen
-                    : ChatizyTheme.primary,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(isScheduled ? Icons.schedule_send : Icons.send, size: 16, color: Colors.white),
+                  const SizedBox(width: 6),
+                  Text(
+                    isScheduled ? 'Schedule' : 'Send Now',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ],
               ),
             ),
           ],

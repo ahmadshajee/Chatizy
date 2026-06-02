@@ -7,6 +7,7 @@ import 'config/supabase_config.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/chat_provider.dart';
+import 'providers/theme_provider.dart';
 import 'providers/admin_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
@@ -17,6 +18,7 @@ import 'screens/account_screen.dart';
 import 'screens/chat_backup_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/privacy_screen.dart';
+import 'widgets/glass_widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,12 +29,12 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Set system UI style for warm beige background
+  // Set system UI style for glass background (light status bar icons)
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: ChatizyTheme.surface,
-    systemNavigationBarIconBrightness: Brightness.dark,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: Colors.black,
+    systemNavigationBarIconBrightness: Brightness.light,
   ));
 
   // Initialize Supabase
@@ -54,26 +56,35 @@ class ChatizyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'Chatizy',
-        debugShowCheckedModeBanner: false,
-        theme: ChatizyTheme.lightTheme,
-        initialRoute: '/login',
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/register': (context) => const RegistrationScreen(),
-          '/home': (context) => const HomeScreen(),
-          '/conversation': (context) => const ConversationScreen(),
-          '/starred': (context) => const StarredMessagesScreen(),
-          '/account': (context) => const AccountScreen(),
-          '/chat-backup': (context) => const ChatBackupScreen(),
-          '/help': (context) => const HelpScreen(),
-          '/privacy': (context) => const PrivacyScreen(),
-        },
-        // Auto-navigate to home if already authenticated
-        builder: (context, child) {
-          return _AuthGate(child: child!);
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'Chatizy',
+            debugShowCheckedModeBanner: false,
+            theme: ChatizyTheme.actualLightTheme,
+            darkTheme: ChatizyTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            initialRoute: '/login',
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/register': (context) => const RegistrationScreen(),
+              '/home': (context) => const HomeScreen(),
+              '/conversation': (context) => const ConversationScreen(),
+              '/starred': (context) => const StarredMessagesScreen(),
+              '/account': (context) => const AccountScreen(),
+              '/chat-backup': (context) => const ChatBackupScreen(),
+              '/help': (context) => const HelpScreen(),
+              '/privacy': (context) => const PrivacyScreen(),
+            },
+            // Auto-navigate to home if already authenticated
+            builder: (context, child) {
+              return AnimatedGlassBackground(
+                child: _AuthGate(child: child!),
+              );
+            },
+          );
         },
       ),
     );

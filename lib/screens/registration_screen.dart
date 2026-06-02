@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../config/theme.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/glass_widgets.dart';
 
-/// Registration screen with role-branched flow.
-/// Toggle between "Personal" and "Business Employee" modes.
-/// Business mode auto-parses email domain and shows Employee ID + Nickname fields.
+/// Registration screen redesigned with a premium Apple Glass UI.
+/// Frosted glass form card, glass text fields, segment toggle, and entrance animations.
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
 
@@ -13,8 +14,7 @@ class RegistrationScreen extends StatefulWidget {
   State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen>
-    with SingleTickerProviderStateMixin {
+class _RegistrationScreenState extends State<RegistrationScreen> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -23,19 +23,9 @@ class _RegistrationScreenState extends State<RegistrationScreen>
   bool _isBusinessMode = false;
   String? _parsedDomain;
 
-  late AnimationController _animController;
-  late Animation<double> _fadeAnim;
-
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _animController.forward();
-
     _emailController.addListener(_parseDomain);
   }
 
@@ -57,7 +47,6 @@ class _RegistrationScreenState extends State<RegistrationScreen>
     _emailController.dispose();
     _passwordController.dispose();
     _nicknameController.dispose();
-    _animController.dispose();
     super.dispose();
   }
 
@@ -99,59 +88,81 @@ class _RegistrationScreenState extends State<RegistrationScreen>
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(ChatizyTheme.marginPage),
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: GlassCard(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo
+                    // Logo with glowing border
                     Container(
-                      width: 96,
-                      height: 96,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
-                        color: ChatizyTheme.primary,
-                        borderRadius: BorderRadius.circular(24),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF007AFF), Color(0xFFBF5AF2)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: ChatizyTheme.primary.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                            color: const Color(0xFF0A84FF).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
                       child: const Icon(
                         Icons.chat_rounded,
                         color: Colors.white,
-                        size: 48,
+                        size: 40,
                       ),
-                    ),
+                    )
+                    .animate()
+                    .fade(duration: 400.ms)
+                    .scale(delay: 50.ms, duration: 300.ms, curve: Curves.easeOutBack),
                     const SizedBox(height: ChatizyTheme.stackMd),
+                    
                     Text('Chatizy',
-                        style: Theme.of(context).textTheme.displayMedium),
+                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ))
+                    .animate()
+                    .fade(delay: 100.ms, duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
+                    
                     const SizedBox(height: ChatizyTheme.stackSm),
                     Text(
                       'Connect effortlessly.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyLarge
-                          ?.copyWith(color: ChatizyTheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 28),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5),
+                          ),
+                    )
+                    .animate()
+                    .fade(delay: 150.ms, duration: 400.ms)
+                    .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
+                    
+                    const SizedBox(height: 24),
 
                     // Account type toggle
                     Container(
                       decoration: BoxDecoration(
-                        color: ChatizyTheme.surfaceContainerHighest
-                            .withValues(alpha: 0.5),
+                        color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05),
                         borderRadius: ChatizyTheme.radiusFull,
+                        border: Border.all(
+                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                          width: 0.8,
+                        ),
                       ),
                       padding: const EdgeInsets.all(4),
                       child: Row(
@@ -163,27 +174,27 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 _parseDomain();
                               }),
                               child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 250),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 8),
                                 decoration: BoxDecoration(
                                   color: !_isBusinessMode
-                                      ? ChatizyTheme.primary
+                                      ? (isDark ? Colors.white.withValues(alpha: 0.12) : Colors.white)
                                       : Colors.transparent,
                                   borderRadius: ChatizyTheme.radiusFull,
+                                  border: !_isBusinessMode
+                                      ? Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15), width: 0.5)
+                                      : null,
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
                                   'Personal',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        color: !_isBusinessMode
-                                            ? Colors.white
-                                            : ChatizyTheme.onSurfaceVariant,
-                                        fontSize: 15,
-                                      ),
+                                  style: TextStyle(
+                                    color: !_isBusinessMode
+                                        ? (isDark ? Colors.white : const Color(0xFF1C1C1E))
+                                        : (isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF8E8E93)),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
                             ),
@@ -195,34 +206,37 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 _parseDomain();
                               }),
                               child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 250),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 8),
                                 decoration: BoxDecoration(
                                   color: _isBusinessMode
-                                      ? ChatizyTheme.primary
+                                      ? (isDark ? Colors.white.withValues(alpha: 0.12) : Colors.white)
                                       : Colors.transparent,
                                   borderRadius: ChatizyTheme.radiusFull,
+                                  border: _isBusinessMode
+                                      ? Border.all(color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15), width: 0.5)
+                                      : null,
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
-                                  'Business Employee',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        color: _isBusinessMode
-                                            ? Colors.white
-                                            : ChatizyTheme.onSurfaceVariant,
-                                        fontSize: 15,
-                                      ),
+                                  'Business',
+                                  style: TextStyle(
+                                    color: _isBusinessMode
+                                        ? (isDark ? Colors.white : const Color(0xFF1C1C1E))
+                                        : (isDark ? Colors.white.withValues(alpha: 0.5) : const Color(0xFF8E8E93)),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
+                    )
+                    .animate()
+                    .fade(delay: 200.ms, duration: 400.ms),
+                    
                     const SizedBox(height: 20),
 
                     // Error message
@@ -230,8 +244,12 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: ChatizyTheme.errorContainer,
+                          color: ChatizyTheme.errorContainer.withValues(alpha: 0.6),
                           borderRadius: ChatizyTheme.radiusMd,
+                          border: Border.all(
+                            color: ChatizyTheme.error.withValues(alpha: 0.4),
+                            width: 0.8,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -244,125 +262,77 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall
-                                    ?.copyWith(color: ChatizyTheme.error),
+                                    ?.copyWith(color: ChatizyTheme.error, fontWeight: FontWeight.w500),
                               ),
                             ),
                           ],
                         ),
-                      ),
+                      )
+                      .animate()
+                      .shake(duration: 400.ms),
                       const SizedBox(height: 16),
                     ],
 
-                    // Form fields in grouped iOS-style container
-                    Container(
-                      decoration: BoxDecoration(
-                        color: ChatizyTheme.surfaceContainerLowest,
-                        borderRadius: ChatizyTheme.radiusMd,
-                        border: Border.all(
-                          color: ChatizyTheme.outlineVariant,
-                          width: 0.5,
+                    // Input Fields Grouped in a column (no double spacing)
+                    Column(
+                      children: [
+                        // Full Name
+                        GlassTextField(
+                          controller: _fullNameController,
+                          hintText: 'Full Name',
+                          textInputAction: TextInputAction.next,
+                          prefixIcon: const Icon(Icons.person_outline, size: 20),
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          // Full Name
-                          TextField(
-                            controller: _fullNameController,
-                            textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              hintText: 'Full Name',
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 14),
+                        const SizedBox(height: 12),
+                        // Email
+                        GlassTextField(
+                          controller: _emailController,
+                          hintText: _isBusinessMode ? 'Company Email' : 'Email',
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          prefixIcon: const Icon(Icons.mail_outlined, size: 20),
+                        ),
+                        const SizedBox(height: 12),
+                        // Password
+                        GlassTextField(
+                          controller: _passwordController,
+                          hintText: 'Password',
+                          obscureText: _obscurePassword,
+                          textInputAction: _isBusinessMode
+                              ? TextInputAction.next
+                              : TextInputAction.done,
+                          onSubmitted:
+                              _isBusinessMode ? null : (_) => _handleSignUp(),
+                          prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              size: 20,
                             ),
+                            onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword),
                           ),
-                          Divider(
-                            height: 0.5,
-                            thickness: 0.5,
-                            indent: 16,
-                            color: ChatizyTheme.outlineVariant
-                                .withValues(alpha: 0.5),
-                          ),
-                          // Email
-                          TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              hintText: _isBusinessMode
-                                  ? 'Company Email'
-                                  : 'Email',
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 14),
-                            ),
-                          ),
-                          Divider(
-                            height: 0.5,
-                            thickness: 0.5,
-                            indent: 16,
-                            color: ChatizyTheme.outlineVariant
-                                .withValues(alpha: 0.5),
-                          ),
-                          // Password
-                          TextField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            textInputAction: _isBusinessMode
-                                ? TextInputAction.next
-                                : TextInputAction.done,
-                            onSubmitted:
-                                _isBusinessMode ? null : (_) => _handleSignUp(),
-                            decoration: InputDecoration(
-                              hintText: 'Password',
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 14),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  size: 20,
-                                  color: ChatizyTheme.outlineVariant,
-                                ),
-                                onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword),
-                              ),
-                            ),
-                          ),
-                          // Business-only fields
-                          if (_isBusinessMode) ...[
-                            Divider(
-                              height: 0.5,
-                              thickness: 0.5,
-                              indent: 16,
-                              color: ChatizyTheme.outlineVariant
-                                  .withValues(alpha: 0.5),
-                            ),
-                            TextField(
-                              controller: _nicknameController,
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _handleSignUp(),
-                              decoration: const InputDecoration(
-                                hintText: 'Nickname (optional)',
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 14),
-                              ),
-                            ),
-                          ],
+                        ),
+                        // Business-only fields
+                        if (_isBusinessMode) ...[
+                          const SizedBox(height: 12),
+                          GlassTextField(
+                            controller: _nicknameController,
+                            hintText: 'Nickname (optional)',
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _handleSignUp(),
+                            prefixIcon: const Icon(Icons.alternate_email, size: 20),
+                          )
+                          .animate()
+                          .fade(duration: 250.ms)
+                          .slideY(begin: 0.1, end: 0),
                         ],
-                      ),
-                    ),
+                      ],
+                    )
+                    .animate()
+                    .fade(delay: 250.ms, duration: 400.ms),
 
                     // Parsed domain chip (business mode)
                     if (_isBusinessMode && _parsedDomain != null) ...[
@@ -371,8 +341,9 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: ChatizyTheme.primaryFixed,
+                          color: ChatizyTheme.primary.withValues(alpha: 0.2),
                           borderRadius: ChatizyTheme.radiusFull,
+                          border: Border.all(color: ChatizyTheme.primary.withValues(alpha: 0.4), width: 0.5),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -386,22 +357,24 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    color: ChatizyTheme.primary,
+                                    color: isDark ? Colors.white : ChatizyTheme.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
                           ],
                         ),
-                      ),
+                      )
+                      .animate()
+                      .scale(duration: 200.ms),
                     ],
-
+ 
                     // Employee ID note
                     if (_isBusinessMode) ...[
                       const SizedBox(height: 8),
                       Text(
                         'Employee ID will be auto-generated',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: ChatizyTheme.outline,
+                              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.5),
                             ),
                       ),
                     ],
@@ -409,33 +382,43 @@ class _RegistrationScreenState extends State<RegistrationScreen>
                     const SizedBox(height: 24),
 
                     // Sign up button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: auth.isLoading ? null : _handleSignUp,
-                        child: auth.isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('Sign Up'),
-                      ),
-                    ),
-                    const SizedBox(height: ChatizyTheme.stackLg),
+                    GlassButton(
+                      onPressed: auth.isLoading ? null : _handleSignUp,
+                      isGlowing: true,
+                      child: auth.isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2.5, color: Colors.white),
+                            )
+                          : const Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                    )
+                    .animate()
+                    .fade(delay: 300.ms, duration: 400.ms),
+                    
+                    const SizedBox(height: 24),
 
                     // Login link
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
                       child: Text(
                         'Log In if you already have an account',
-                        style:
-                            Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: ChatizyTheme.primary,
-                                ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: ChatizyTheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
-                    ),
+                    )
+                    .animate()
+                    .fade(delay: 350.ms, duration: 400.ms),
                   ],
                 ),
               ),
