@@ -3,7 +3,26 @@
   "outputDirectory": "build/web",
   "installCommand": "echo 'No install needed'",
   "framework": null,
+  "redirects": [
+    {
+      "source": "/getstarted/thankyou",
+      "destination": "/thankyou",
+      "permanent": true
+    },
+    {
+      "source": "/get-started/thankyou",
+      "destination": "/thankyou",
+      "permanent": true
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/thankyou",
+      "destination": "/thankyou.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
