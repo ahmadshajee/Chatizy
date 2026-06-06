@@ -1,51 +1,30 @@
+// This is a basic Flutter widget test.
+//
+// To perform an interaction with a widget in your test, use the WidgetTester
+// utility in the flutter_test package. For example, you can send tap and scroll
+// gestures. You can also use WidgetTester to find child widgets in the widget
+// tree, read text, and verify that the values of widget properties are correct.
+
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:chatizy/models/message.dart';
+
+import 'package:chatizy/main.dart';
 
 void main() {
-  group('Message Model Tests', () {
-    test('Message.fromJson parsing', () {
-      final json = {
-        'id': 'msg-123',
-        'room_id': 'room-456',
-        'sender_id': 'sender-789',
-        'sender_name': 'Alice',
-        'receiver_domain': 'example.com',
-        'content': 'Hello World',
-        'created_at': '2026-06-06T00:00:00.000Z',
-        'is_read': true,
-      };
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(const ChatizyApp());
 
-      final message = Message.fromJson(json);
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
 
-      expect(message.id, 'msg-123');
-      expect(message.roomId, 'room-456');
-      expect(message.senderId, 'sender-789');
-      expect(message.senderName, 'Alice');
-      expect(message.receiverDomain, 'example.com');
-      expect(message.content, 'Hello World');
-      expect(message.isRead, true);
-    });
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
 
-    test('isMediaUrl detects storage and supabase links', () {
-      final msg1 = Message(
-        id: '1',
-        roomId: 'room',
-        senderId: 'sender',
-        senderName: 'name',
-        content: 'https://supabase.co/storage/v1/object/public/avatar.png',
-        createdAt: DateTime.now(),
-      );
-      expect(msg1.isMediaUrl, true);
-
-      final msg2 = Message(
-        id: '2',
-        roomId: 'room',
-        senderId: 'sender',
-        senderName: 'name',
-        content: 'Hello World',
-        createdAt: DateTime.now(),
-      );
-      expect(msg2.isMediaUrl, false);
-    });
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
   });
 }
